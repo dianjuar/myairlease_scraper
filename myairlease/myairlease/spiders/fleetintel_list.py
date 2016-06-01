@@ -7,6 +7,7 @@ from myairlease.items 	import fleetIntelList_Item
 
 #python debugger
 import pdb
+import re
 
 class FleetintelListSpider(scrapy.Spider):
     name = "fleetintel_list"
@@ -55,16 +56,18 @@ class FleetintelListSpider(scrapy.Spider):
     	modelsRows = hxs.xpath('//div[@id="table"]/table//tr[position()>1]')
 
     	items = list()
-    	# pdb.set_trace()
  
     	for tr in modelsRows:
-    		tds = tr.xpath('./td/text()').extract()
+    		tds = tr.xpath('./td/descendant-or-self::*/text()').extract()
 
     		item['Model']		= tds[0]
     		item['MSN']			= tds[1]
     		item['YoM']			= tds[2]
     		item['Reg']			= tds[3]
-    		item['Comments']	= tds[4]
+    		item['Comments']	= tds[4:]
 
+    		# if( re.compile('Flying with China West Air, marketed ').match( item['Comments'] ) ):
+    			# pdb.set_trace()
+    		
     		#export the item
     		yield item
