@@ -24,10 +24,12 @@ class AvailableAssetsSpider(scrapy.Spider):
     def parse(self, response):
     	hxs = Selector(response)
 
-    	#get the categories
-    	companies_hxs = hxs.xpath('//td[@id="links9"]//a/text()').extract()
+    	item = AvailableAssets_Item()
 
-    	for c in companies_hxs:
-    		print( c )
+    	#get the categories
+    	categoryNames_hxs = hxs.xpath('//td[@id="links9"]//h4')
+
+    	for cat in categoryNames_hxs:
+    		item['Category'] = categoryName = cat.xpath('.//descendant-or-self::*/text()').extract()','.join(categoryName)
 
         pass
