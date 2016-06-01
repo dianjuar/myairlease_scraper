@@ -14,6 +14,13 @@ BOT_NAME = 'myairlease'
 SPIDER_MODULES = ['myairlease.spiders']
 NEWSPIDER_MODULE = 'myairlease.spiders'
 
+ITEM_PIPELINES = {
+'myairlease.pipelines.CSVExportPipeline': 300
+}
+
+DEPTH_PRIORITY = 1
+SCHEDULER_DISK_QUEUE = 'scrapy.squeue.PickleFifoDiskQueue'
+SCHEDULER_MEMORY_QUEUE = 'scrapy.squeue.FifoMemoryQueue'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'myairlease (+http://www.yourdomain.com)'

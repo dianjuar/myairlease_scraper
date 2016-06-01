@@ -17,7 +17,7 @@ class FleetintelListSpider(scrapy.Spider):
 
     # Constructor
     def __init__ (self):
-    	pass
+    	self.nameOfFile = 'FleetIntel_List.csv'
         
 
     def parse(self, response):
@@ -37,14 +37,13 @@ class FleetintelListSpider(scrapy.Spider):
 
     		#extract the url of the company 
     		companyUrl 		= response.urljoin( com_hxs.xpath('./@href')[0].extract() )
+    		# print ( '------------------------------>' + item['Company'] +' - '+ companyUrl )
+    		# continue
     		
     		#extract the company
     		# yield Request( companyUrl, callback=self.parse_company)
     		yield Request( companyUrl, meta={'item':item}, callback=self.parse_company)
 
-    		# return
-    		# self.parse_company(  )
-        pass
 
     # scrap the company list e.g http://www.myairlease.com/available/fleetintel_A320
     def parse_company(self, response):
@@ -54,6 +53,9 @@ class FleetintelListSpider(scrapy.Spider):
     	#get all the elements of the table except the 1st child 
     	#the 1st child is the head of the table with useless information
     	modelsRows = hxs.xpath('//div[@id="table"]/table//tr[position()>1]')
+
+    	items = list()
+    	# pdb.set_trace()
  
     	for tr in modelsRows:
     		tds = tr.xpath('./td/text()').extract()
