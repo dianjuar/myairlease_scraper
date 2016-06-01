@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 import scrapy
-from scrapy                                    import Selector
-from scrapy.http                            import Request
+from scrapy    			import Selector
+from scrapy.http    	import Request
+
+from myairlease.items 	import fleetIntelList_Item
 
 #python debugger
 import pdb
@@ -30,14 +32,37 @@ class FleetintelListSpider(scrapy.Spider):
     		#extract the name of the company
     		self.company 	= com_hxs.xpath('./text()')[0].extract()
 
-    		#extract the url of the company
+    		item = fleetIntelList_Item()
+    		item['Company'] = self.company
+
+    		#extract the url of the company 
     		companyUrl 		= response.urljoin( com_hxs.xpath('./@href')[0].extract() )
     		
-    		self.parse_company( companyUrl )
+    		#extract the company
+    		# yield Request( companyUrl, callback=self.parse_company)
+    		yield Request( companyUrl, meta={'item':item}, callback=self.parse_company)
+
+    		# return
+    		# self.parse_company(  )
         pass
 
+    # scrap the company list e.g http://www.myairlease.com/available/fleetintel_A320
     def parse_company(self, response):
-    	hxs = Selector(response)
+    	hxs = Selector(response)    	
+    	item = response.request.meta['item']
 
-    	modelsRows = hxs.xpath()
-    	pass
+    	#get all the elements of the table except the 1st child 
+    	#the 1st child is the head of the table with useless information
+    	modelsRows = hxs.xpath('//div[@id="table"]/table//tr[position()>1]')
+ 
+    	for tr in modelsRows:
+    		tds = tr.xpath('./td/text()').extract()
+
+    		item['Model']		= tds[0]
+    		item['MSN']			= tds[1]
+    		item['YoM']			= tds[2]
+    		item['Reg']			= tds[3]
+    		item['Comments']	= tds[4]
+
+    		#export the item
+    		yield item
