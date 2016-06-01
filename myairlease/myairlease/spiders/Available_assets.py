@@ -30,6 +30,7 @@ class AvailableAssetsSpider(scrapy.Spider):
     	categoryNames_hxs = hxs.xpath('//td[@id="links9"]//h4')
 
     	for cat in categoryNames_hxs:
-    		item['Category'] = categoryName = cat.xpath('.//descendant-or-self::*/text()').extract()','.join(categoryName)
-
+            catNames            = cat.xpath('.//descendant-or-self::*/text()').extract()
+            item['Category']    = ','.join(catNames)
+            
         pass
