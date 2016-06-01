@@ -7,6 +7,9 @@
 from scrapy             import signals
 from scrapy.exporters   import CsvItemExporter
 
+#python debugger
+import pdb
+
 class MyairleasePipeline(object):
     def process_item(self, item, spider):
         return item
@@ -24,12 +27,20 @@ class CSVExportPipeline(object):
         return pipeline
 
     def spider_opened(self, spider):
+
+        # print( str(spider) )
+        # pdb.set_trace()
+
         file = open('%s' % spider.nameOfFile, 'w+b')
         self.files[spider] = file
         self.exporter = CsvItemExporter(file)
 
-        self.exporter.fields_to_export = ['Company', 'Model', 'MSN', 'YoM', 'Reg', 'Comments']
-
+        #each spider has a different items
+        if ( spider.name is 'fleetintel_list' ):
+            self.exporter.fields_to_export = ['Company', 'Model', 'MSN', 'YoM', 'Reg', 'Comments']
+        elif ( spider.name is 'Available_assets' ):
+            self.exporter.fields_to_export = ['Category', 'Company', 'Contact_webPage', 'Contact_email', 'Contact_phone', 'Model', 'YoM', 'MSN', 'TFHs_TFCs', 'Engines', 'F_B_E', 'OL_A_S', 'LU', 'AD']
+        
         self.exporter.start_exporting()
 
     def spider_closed(self, spider):

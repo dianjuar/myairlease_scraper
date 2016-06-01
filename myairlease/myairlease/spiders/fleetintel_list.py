@@ -58,16 +58,14 @@ class FleetintelListSpider(scrapy.Spider):
     	items = list()
  
     	for tr in modelsRows:
+            #some comments have several childs and you get it all with 'descendant-or-self::*/text()'
     		tds = tr.xpath('./td/descendant-or-self::*/text()').extract()
 
     		item['Model']		= tds[0]
     		item['MSN']			= tds[1]
     		item['YoM']			= tds[2]
     		item['Reg']			= tds[3]
-    		item['Comments']	= tds[4:]
-
-    		# if( re.compile('Flying with China West Air, marketed ').match( item['Comments'] ) ):
-    			# pdb.set_trace()
+    		item['Comments']	= tds[4:]  #in case have multiple childs  		
     		
     		#export the item
     		yield item
