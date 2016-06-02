@@ -31,10 +31,10 @@ class FleetintelListSpider(scrapy.Spider):
     	for com_hxs in companies_hxs:
 
     		#extract the name of the company
-    		self.company 	= com_hxs.xpath('./text()')[0].extract()
+    		company 	= com_hxs.xpath('./text()')[0].extract()
 
     		item = fleetIntelList_Item()
-    		item['Company'] = self.company
+    		item['Company'] = company
 
     		#extract the url of the company 
     		companyUrl 		= response.urljoin( com_hxs.xpath('./@href')[0].extract() )
