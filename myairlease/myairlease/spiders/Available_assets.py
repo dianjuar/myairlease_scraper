@@ -70,8 +70,9 @@ class AvailableAssetsSpider(scrapy.Spider):
 
         for tr in modelsRows:
 
-            # si tere está vacío continue
             tds = tr.xpath('./td')
+            if len(tds) == 0:
+                continue
             
             contacts = list()
 
@@ -85,7 +86,8 @@ class AvailableAssetsSpider(scrapy.Spider):
 
                     contacts.append( Contact_info['name']+', '+Contact_info['link'] )                
                 except IndexError:
-                    pdb.set_trace()
+                    # pdb.set_trace()
+                    pass
 
             item['Contact_webPage'] = contacts[0]
             item['Contact_email']   = contacts[1]
