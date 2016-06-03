@@ -40,29 +40,34 @@ class AvailableAssetsSpider(scrapy.Spider):
 
             if i == 0:
                 yield Request( cat['link'], 
-                               meta={'meta':meta, 'case':self.case.largeTable }, 
+                               meta={'meta':meta }, 
                                callback=self.parse_companyList)
             elif i == 1:
                 #the second link doesn't have any company list
-                meta['Company'] = ''
-                
+                meta['Company'] = ''    
                 #extract the company
                 yield Request( cat['link'], 
-                               meta={'meta':meta, 'case':self.case.largeTable },
+                               meta={'meta':meta },
                                callback=self.parse_company)
             elif i == 2:
                 yield Request( cat['link'], 
-                               meta={'meta':meta, 'case':self.case.shortTable}, 
+                               meta={'meta':meta}, 
+                               callback=self.parse_companyList)
+            elif i == 3:
+                yield Request( cat['link'], 
+                               meta={'meta':meta}, 
                                callback=self.parse_companyList)
 
     def parse_companyList(self, response):
         hxs = Selector(response)        
         meta = response.request.meta['meta']
-        case = response.request.meta['case']
 
         #path to company list
-        companies_hxs = hxs.xpath('//td[@id="links3"]//p[@id="plist"]//a')
+        companies_hxs = hxs.xpath('//td[@id="links3"]//p[@id="plist"]//a | '+
+                                  '//div[@id="leslist"]//table//a')
 
+        # print ( len(companies_hxs) )
+        # pdb.set_trace()
         # go through the companies
         for com_hxs in companies_hxs:
 
@@ -78,15 +83,14 @@ class AvailableAssetsSpider(scrapy.Spider):
             metaCopy['Category'] = meta['Category']
 
             yield Request( companyUrl, 
-                           meta={'meta':metaCopy,'case':case}, 
+                           meta={'meta':metaCopy}, 
                            callback=self.parse_company)
 
         pass
 
     def parse_company(self, response):
         hxs = Selector(response)        
-        meta = response.request.meta['meta']    
-        case = response.request.meta['case']
+        meta = response.request.meta['meta']
 
         #get all the elements of the table except the 1st child 
         #the 1st child is the head of the table with useless information
@@ -103,6 +107,12 @@ class AvailableAssetsSpider(scrapy.Spider):
             # some rows are empty or has a single empty td, very strange but just they are there
             if len(tds) == 0 or len(tds) == 1:
                 continue
+            
+            case = self.case.largeTable
+            nData = len( tds )
+
+            if nData is 6:
+                case = self.case.shortTable
 
             #create the item
             item = AvailableAssets_Item()
