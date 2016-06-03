@@ -39,7 +39,7 @@ class CSVExportPipeline(object):
         if ( spider.name is 'fleetintel_list' ):
             self.exporter.fields_to_export = ['Company', 'Model', 'MSN', 'YoM', 'Reg', 'Comments']
         elif ( spider.name is 'Available_assets' ):
-            self.exporter.fields_to_export = ['Category', 'Company', 'Contact_webPage', 'Contact_email', 'Contact_phone', 'Model', 'YoM', 'MSN', 'TFHs_TFCs', 'Engines', 'F_B_E', 'OL_A_S', 'LU', 'AD']
+            self.exporter.fields_to_export = ['Category', 'Company', 'Contact_webPage', 'Contact_email', 'Contact_phone', 'Model', 'YoM', 'MSN', 'TFHs_TFCs', 'Engines', 'F_B_E', 'OL_A_S', 'LU', 'AD', 'ESN', 'L_E_S']
         
         self.exporter.start_exporting()
 

@@ -36,4 +36,6 @@ class AvailableAssets_Item(scrapy.Item):
     OL_A_S				= scrapy.Field()
     LU					= scrapy.Field()
     AD					= scrapy.Field()
+    ESN                 = scrapy.Field()
+    L_E_S               = scrapy.Field()
     pass

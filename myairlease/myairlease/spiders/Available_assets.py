@@ -3,6 +3,7 @@ import scrapy
 
 from scrapy    			import Selector
 from scrapy.http    	import Request
+from enum               import Enum   
 
 from myairlease.items 	import AvailableAssets_Item
 
@@ -22,6 +23,9 @@ class AvailableAssetsSpider(scrapy.Spider):
     	self.nameOfFile = 'Available_assets_list.csv'
         self.categories = list()
 
+        self.case = Enum('case','largeTable shortTable')
+
+
     def parse(self, response):
     	hxs = Selector(response)
 
@@ -34,22 +38,26 @@ class AvailableAssetsSpider(scrapy.Spider):
             meta    = dict()
             meta['Category']  = cat['name']
 
-            if i == 0:
-                yield Request( cat['link'], 
-                               meta={'meta':meta}, 
-                               callback=self.parse_companyList)
-            elif i == 1:
-                #the second link doesn't have any company list
-                item['Company'] = ''
+            # if i == 0:
+            #     yield Request( cat['link'], 
+            #                    meta={'meta':meta}, 
+            #                    callback=self.parse_companyList)
+            # elif i == 1:
+            #     #the second link doesn't have any company list
+            #     meta['Company'] = ''
                 
-                #extract the company
-                yield Request( cat['link'], meta={'item':item}, callback=self.parse_company)
-            
-
+            #     #extract the company
+            #     yield Request( cat['link'], meta={'meta':meta}, callback=self.parse_company)
+            # el
+            if i == 2:
+                yield Request( cat['link'], 
+                               meta={'meta':meta, 'case':self.case.shortTable}, 
+                               callback=self.parse_companyList)
 
     def parse_companyList(self, response):
         hxs = Selector(response)        
         meta = response.request.meta['meta']
+        case = response.request.meta['case']
 
         #path to company list
         companies_hxs = hxs.xpath('//td[@id="links3"]//p[@id="plist"]//a')
@@ -64,16 +72,12 @@ class AvailableAssetsSpider(scrapy.Spider):
             #extract the url of the company 
             companyUrl      = response.urljoin( com_hxs.xpath('./@href')[0].extract() )
                         
-            
             metaCopy = dict()
             metaCopy['Company'] = meta['Company']
             metaCopy['Category'] = meta['Category']
 
-
-            # pdb.set_trace()
-
             yield Request( companyUrl, 
-                           meta={'meta':metaCopy}, 
+                           meta={'meta':metaCopy,'case':case}, 
                            callback=self.parse_company)
 
         pass
@@ -81,6 +85,7 @@ class AvailableAssetsSpider(scrapy.Spider):
     def parse_company(self, response):
         hxs = Selector(response)        
         meta = response.request.meta['meta']    
+        case = response.request.meta['case']
 
         #get all the elements of the table except the 1st child 
         #the 1st child is the head of the table with useless information
@@ -126,20 +131,26 @@ class AvailableAssetsSpider(scrapy.Spider):
             self.processContact(numberOfContact=numberOfContact, contacts=contacts, item=item, tds=tds, response=response)
             
             item['Model']           = tds[1].xpath('./text()')[0].extract()
-            item['YoM']             = tds[2].xpath('./text()')[0].extract()    
+
+            if case is self.case.shortTable:
+                item['ESN']         = tds[2].xpath('./text()')[0].extract().strip()
+                item['L_E_S']       = tds[3].xpath('./text()')[0].extract()  
+                item['LU']          = tds[4].xpath('./text()')[0].extract() 
+                item['AD']          = tds[5].xpath('./text()')[0].extract() 
+            else:
+                item['YoM']         = tds[2].xpath('./text()')[0].extract()
+                item['MSN']             = tds[3].xpath('./descendant-or-self::text()').extract()
+                self.eraseWhiteSpaces(item['MSN'])
             
-            item['MSN']             = tds[3].xpath('./descendant-or-self::text()').extract()
-            self.eraseWhiteSpaces(item['MSN'])
-                
-            item['TFHs_TFCs']       = tds[4].xpath('./text()')[0].extract()             
-            item['Engines']         = tds[5].xpath('./text()')[0].extract() 
-            item['F_B_E']           = tds[6].xpath('./text()')[0].extract() 
-            item['OL_A_S']          = tds[7].xpath('./text()')[0].extract() 
-            item['LU']              = tds[8].xpath('./text()')[0].extract() 
-            item['AD']              = tds[9].xpath('./text()')[0].extract() 
+                item['TFHs_TFCs']       = tds[4].xpath('./text()')[0].extract()             
+                item['Engines']         = tds[5].xpath('./text()')[0].extract() 
+                item['F_B_E']           = tds[6].xpath('./text()')[0].extract() 
+                item['OL_A_S']          = tds[7].xpath('./text()')[0].extract() 
+                item['LU']              = tds[8].xpath('./text()')[0].extract() 
+                item['AD']              = tds[9].xpath('./text()')[0].extract() 
             yield item
             # pdb.set_trace()
-            
+
     def get_niceCategoryName(self, hxs, response):
         categories_hxs = hxs.xpath('//td[@id="links9"]//h4')
 
