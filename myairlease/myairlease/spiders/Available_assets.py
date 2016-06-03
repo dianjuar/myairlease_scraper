@@ -38,18 +38,19 @@ class AvailableAssetsSpider(scrapy.Spider):
             meta    = dict()
             meta['Category']  = cat['name']
 
-            # if i == 0:
-            #     yield Request( cat['link'], 
-            #                    meta={'meta':meta}, 
-            #                    callback=self.parse_companyList)
-            # elif i == 1:
-            #     #the second link doesn't have any company list
-            #     meta['Company'] = ''
+            if i == 0:
+                yield Request( cat['link'], 
+                               meta={'meta':meta, 'case':self.case.largeTable }, 
+                               callback=self.parse_companyList)
+            elif i == 1:
+                #the second link doesn't have any company list
+                meta['Company'] = ''
                 
-            #     #extract the company
-            #     yield Request( cat['link'], meta={'meta':meta}, callback=self.parse_company)
-            # el
-            if i == 2:
+                #extract the company
+                yield Request( cat['link'], 
+                               meta={'meta':meta, 'case':self.case.largeTable },
+                               callback=self.parse_company)
+            elif i == 2:
                 yield Request( cat['link'], 
                                meta={'meta':meta, 'case':self.case.shortTable}, 
                                callback=self.parse_companyList)
