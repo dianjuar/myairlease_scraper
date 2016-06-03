@@ -35,12 +35,14 @@ class AvailableAssetsSpider(scrapy.Spider):
             
             if i == 0:
                 yield Request( cat['link'], meta={'item':item}, callback=self.parse_companyList)
-            elif i == 1:
+            '''el
+            if i == 1:
                 #the second link doesn't have any company list
                 item['Company'] = ''
                 
                 #extract the company
                 yield Request( cat['link'], meta={'item':item}, callback=self.parse_company)
+            '''
 
 
     def parse_companyList(self, response):
@@ -55,8 +57,8 @@ class AvailableAssetsSpider(scrapy.Spider):
 
             #extract the name of the company
             company    = com_hxs.xpath('./text()')[0].extract()
-
             item['Company'] = company
+            pdb.set_trace()
 
             #extract the url of the company 
             companyUrl      = response.urljoin( com_hxs.xpath('./@href')[0].extract() )
@@ -111,25 +113,17 @@ class AvailableAssetsSpider(scrapy.Spider):
             
             item['Model']           = tds[1].xpath('./text()')[0].extract()
             item['YoM']             = tds[2].xpath('./text()')[0].extract()    
+            
             item['MSN']             = tds[3].xpath('./descendant-or-self::text()').extract()
             self.eraseWhiteSpaces(item['MSN'])
-
-
-
-
-            # print (response)
-            # print (item['MSN'] )
-            
-            # pdb.set_trace()
                 
-            
-            # item['TFHs_TFCs']       = tds[4].xpath('./text()')[0].extract() 
-            # print ( item['TFHs_TFCs'] ) 
-            # item['Engines']         = tds[5].xpath('./text()')[0].extract() 
-            # item['F_B_E']           = tds[6].xpath('./text()')[0].extract() 
-            # item['OL_A_S']          = tds[7].xpath('./text()')[0].extract() 
-            # item['LU']              = tds[8].xpath('./text()')[0].extract() 
-            # item['AD']              = tds[9].xpath('./text()')[0].extract() 
+            item['TFHs_TFCs']       = tds[4].xpath('./text()')[0].extract()             
+            item['Engines']         = tds[5].xpath('./text()')[0].extract() 
+            item['F_B_E']           = tds[6].xpath('./text()')[0].extract() 
+            item['OL_A_S']          = tds[7].xpath('./text()')[0].extract() 
+            item['LU']              = tds[8].xpath('./text()')[0].extract() 
+            item['AD']              = tds[9].xpath('./text()')[0].extract() 
+            yield item
             # pdb.set_trace()
             
     def get_niceCategoryName(self, hxs, response):
