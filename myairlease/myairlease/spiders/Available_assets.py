@@ -29,10 +29,18 @@ class AvailableAssetsSpider(scrapy.Spider):
         self.get_niceCategoryName( hxs=hxs, response=response )
         # self.get_unguaranteedCategoryNames( hxs )
 
-        for cat in self.categories:
+        for i, cat in enumerate( self.categories ):
             item = AvailableAssets_Item()
             item['Category'] = cat['name']
-            yield Request( cat['link'], meta={'item':item}, callback=self.parse_companyList)
+            
+            if i == 0:
+                yield Request( cat['link'], meta={'item':item}, callback=self.parse_companyList)
+            elif i == 1:
+                #the second link doesn't have any company list
+                item['Company'] = ''
+                
+                #extract the company
+                yield Request( cat['link'], meta={'item':item}, callback=self.parse_company)
 
 
     def parse_companyList(self, response):
@@ -66,40 +74,53 @@ class AvailableAssetsSpider(scrapy.Spider):
         #the 1st child is the head of the table with useless information
         modelsRows = hxs.xpath('//div[@id="table"]//table//tr[position()>1]')
 
+        # some tables are completely empty
+        if len(modelsRows) == 0:
+            return
+
         items = list()
 
         for tr in modelsRows:
 
             tds = tr.xpath('./td')
-            if len(tds) == 0:
+            
+            # some rows are empty or has a single empty td, very strange but just they are there
+            if len(tds) == 0 or len(tds) == 1:
                 continue
             
             contacts = list()
 
-            for x in xrange(0,2):
-                try:
-                    Contact_info = dict()
-                    basePath = tds[0].xpath('./a[position()>'+str(x)+']')
-                
-                    Contact_info['name'] = basePath.xpath('./text()')[0].extract().strip()
-                    Contact_info['link'] = basePath.xpath('./@href')[0].extract().strip()
+            '''
+            The 1st col has 2 link the most part of the time but 
+            sometimes has only 1, I need to validate when it has 1 for prevent
+            crashes
+            '''
+            numberOfContact = len(tds[0].xpath('./descendant::*[ self::a ]').extract())
+            
+            for x in range(0, numberOfContact):
+                Contact_info = dict()
+                basePath = tds[0].xpath('./a[position()>'+str(x)+']')
+            
+                Contact_info['name'] = basePath.xpath('./text()')[0].extract().strip()
+                Contact_info['link'] = basePath.xpath('./@href')[0].extract().strip()
 
-                    contacts.append( Contact_info['name']+', '+Contact_info['link'] )                
-                except IndexError:
-                    # pdb.set_trace()
-                    pass
+                contacts.append( Contact_info['name']+', '+Contact_info['link'] )                
 
-            item['Contact_webPage'] = contacts[0]
-            item['Contact_email']   = contacts[1]
-            item['Contact_phone']   = tds[0].xpath('./text()')[1].extract()
+
+            self.processContact(numberOfContact=numberOfContact, contacts=contacts, item=item, tds=tds, response=response)
             
             item['Model']           = tds[1].xpath('./text()')[0].extract()
-            item['YoM']             = tds[2].xpath('./text()')[0].extract()
+            item['YoM']             = tds[2].xpath('./text()')[0].extract()    
+            item['MSN']             = tds[3].xpath('./descendant-or-self::text()').extract()
+            self.eraseWhiteSpaces(item['MSN'])
+
+
+
+
+            # print (response)
+            # print (item['MSN'] )
             
-            try:
-                item['MSN']             = tds[3].xpath('./descendant-or-self::*/text()').extract() 
-            except IndexError:
-                pdb.set_trace()
+            # pdb.set_trace()
                 
             
             # item['TFHs_TFCs']       = tds[4].xpath('./text()')[0].extract() 
@@ -125,6 +146,30 @@ class AvailableAssetsSpider(scrapy.Spider):
             cat['link'] = response.urljoin( catLink[0] )
 
             self.categories.append( cat )
+
+    def processContact(self, numberOfContact, contacts, item, tds, response=None):
+        
+        if numberOfContact == 2:
+            item['Contact_webPage'] = contacts[0]
+            item['Contact_email']   = contacts[1]
+            item['Contact_phone']   = tds[0].xpath('./text()')[1].extract()
+        else:
+
+            try:
+                item['Contact_phone']   = tds[0].xpath('./text()')[0].extract()
+            except Exception, e:
+                pdb.set_trace()
+                # raise
+
+            if re.compile("mailto").search( contacts[0] ):
+                item['Contact_email']   = contacts[0]
+                item['Contact_phone']   = ''
+            else:
+                item['Contact_email']   = ''
+                item['Contact_phone']   = contacts[0]
+                
+
+
 
     '''
     At http://www.myairlease.com/available/available_for_lease there is a no guarantee data base. 
@@ -154,7 +199,8 @@ class AvailableAssetsSpider(scrapy.Spider):
     def eraseWhiteSpaces(self, vec):
         
         for i, x in enumerate(vec):
-            vec[i] = x.strip()
+            x = x.strip()
+            vec[i] = x
 
-            if re.compile("\n").search( x ):
+            if x == '':
                 del vec[i]    
