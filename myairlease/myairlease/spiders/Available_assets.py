@@ -30,24 +30,26 @@ class AvailableAssetsSpider(scrapy.Spider):
         # self.get_unguaranteedCategoryNames( hxs )
 
         for i, cat in enumerate( self.categories ):
-            item = AvailableAssets_Item()
-            item['Category'] = cat['name']
             
+            meta    = dict()
+            meta['Category']  = cat['name']
+
             if i == 0:
-                yield Request( cat['link'], meta={'item':item}, callback=self.parse_companyList)
-            '''el
-            if i == 1:
+                yield Request( cat['link'], 
+                               meta={'meta':meta}, 
+                               callback=self.parse_companyList)
+            elif i == 1:
                 #the second link doesn't have any company list
                 item['Company'] = ''
                 
                 #extract the company
                 yield Request( cat['link'], meta={'item':item}, callback=self.parse_company)
-            '''
+            
 
 
     def parse_companyList(self, response):
         hxs = Selector(response)        
-        item = response.request.meta['item']
+        meta = response.request.meta['meta']
 
         #path to company list
         companies_hxs = hxs.xpath('//td[@id="links3"]//p[@id="plist"]//a')
@@ -57,20 +59,28 @@ class AvailableAssetsSpider(scrapy.Spider):
 
             #extract the name of the company
             company    = com_hxs.xpath('./text()')[0].extract()
-            item['Company'] = company
-            pdb.set_trace()
-
+            meta['Company'] = company
+            
             #extract the url of the company 
             companyUrl      = response.urljoin( com_hxs.xpath('./@href')[0].extract() )
                         
-            #extract the company
-            yield Request( companyUrl, meta={'item':item}, callback=self.parse_company)
+            
+            metaCopy = dict()
+            metaCopy['Company'] = meta['Company']
+            metaCopy['Category'] = meta['Category']
+
+
+            # pdb.set_trace()
+
+            yield Request( companyUrl, 
+                           meta={'meta':metaCopy}, 
+                           callback=self.parse_company)
 
         pass
 
     def parse_company(self, response):
         hxs = Selector(response)        
-        item = response.request.meta['item']
+        meta = response.request.meta['meta']    
 
         #get all the elements of the table except the 1st child 
         #the 1st child is the head of the table with useless information
@@ -80,8 +90,6 @@ class AvailableAssetsSpider(scrapy.Spider):
         if len(modelsRows) == 0:
             return
 
-        items = list()
-
         for tr in modelsRows:
 
             tds = tr.xpath('./td')
@@ -89,7 +97,13 @@ class AvailableAssetsSpider(scrapy.Spider):
             # some rows are empty or has a single empty td, very strange but just they are there
             if len(tds) == 0 or len(tds) == 1:
                 continue
-            
+
+            #create the item
+            item = AvailableAssets_Item()
+            item['Category']    = meta['Category']
+            item['Company']     = meta['Company']
+
+
             contacts = list()
 
             '''
